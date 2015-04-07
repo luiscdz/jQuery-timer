@@ -1,16 +1,14 @@
 /*jslint debug: true, nomen: true, plusplus: true, regexp: true, sloppy: true, vars: true, white: true*/
-/*!
- * jquery.tzineClock.js - Tutorialzine Colorful Clock Plugin
- *
- * Copyright (c) 2009 Martin Angelov
- * http://tutorialzine.com/
+
+/*
+
  *
  * Licensed under MIT
  * http://www.opensource.org/licenses/mit-license.php
  *
- * Launch  : December 2009
- * Version : 1.0
- * Released: Monday 28th December, 2009 - 00:00
+ * Launch  : april 2015
+ * Version : 0.1
+ * Released: Tuesday 7th April, 2015 - 15:00
  */
 
 (function($){
@@ -19,9 +17,9 @@
 	var gVars = {};
 
 	// Extending the jQuery core:
-	$.fn.tzineClock = function(opts){
+	$.fn.timer = function(opts){
 	
-		// "this" contains the elements that were selected when calling the plugin: $('elements').tzineClock();
+		// "this" contains the elements that were selected when calling the plugin: $('elements').timer();
 		// If the selector returned more than one element, use the first one:
 		
 		var container = this.eq(0);
@@ -62,7 +60,7 @@
     
 	function setUp(){
 		// The colors of the dials:
-		var colors = ['orange','blue','green'];
+		var colors = ['blue'];
 		
 		var tmp = "";
         var display = "<div class='display'></div>";
@@ -80,7 +78,7 @@
         
         var html = display + front;
             
-		for( var i = 0 ; i < 3; i++ ){
+		for( var i = 0 ; i < 1; i++ ){
 			// Creating a new element and setting the color as a class name:
 			
 			tmp = $('<div>').attr('class',colors[i]+' clock').html( html );
