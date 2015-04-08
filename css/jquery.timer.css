@@ -1,6 +1,6 @@
 @font-face {
-        font-family:Roboto Condensed;
-        src: url(RobotoCondensed-Regular.tff);
+        font-family:"Roboto Condensed";
+        src: url(RobotoCondensed-Regular.ttf);
 }
 
 
@@ -44,7 +44,7 @@
 	/* Holds the number of seconds, minutes or hours respectfully */
 	position:absolute;
 	width: 150px;
-	font-family:"Lucida Sans Unicode", "Lucida Grande", sans-serif;
+	font-family:"Roboto Condensed";
 	z-index:20;
 	color: #2A2828;
 	font-size: 25px;
