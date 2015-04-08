@@ -133,7 +133,7 @@
 
 		if( current == 0 ){
 			// Hiding the right half of the background:
-			clock.rotateRight.hide();
+			clock.rotateLeft.hide();
 			
 			// Resetting the rotation of the left part:
 			rotateElement( clock.rotateLeft, 0 );

@@ -1,3 +1,9 @@
+@font-face {
+        font-family:Roboto Condensed;
+        src: url(RobotoCondensed-Regular.tff);
+}
+
+
 .clock{
 	/* The .clock div. Created dynamically by jQuery */
 	/* background-color:#252525; */
@@ -27,8 +33,7 @@
 
 .clock .bg, .clock .front{
 	width: 75px;
-	height: 150px;
-	background-color: #FFFFFF;
+	height: 150px;	
 	position:absolute;
 	top:0;
 	padding: 0 0 0 0;
@@ -55,19 +60,19 @@
 .clock .bg.left{ left:0; top: 0;}
 
 /* Individual styles for each color: */
-.orange .bg.left{ background:url(img/bg_orange.png) no-repeat left top; }
-.green .bg.left{ background:url(img/bg_green.png) no-repeat left top; }
-.blue .bg.left{	background:url(img/bg_blue.png) no-repeat left top; }
+.orange .bg.left{ background:url(../images/bg_orange.png) no-repeat left top; }
+.green .bg.left{ background:url(../images/bg_green.png) no-repeat left top; }
+.blue .bg.left{	background:url(../images/bg_blue.png) no-repeat left top; }
 
 /* The right part of the background: */
 .clock .bg.right{ left: 75px; top: 0;}
 
-.orange .bg.right{ background:url(img/bg_orange.png) no-repeat right top; }
-.green .bg.right{ background:url(img/bg_green.png) no-repeat right top; }
-.blue .bg.right{ background:url(img/bg_blue.png) no-repeat right top; }
+.orange .bg.right{ background:url(../images/bg_orange.png) no-repeat right top; }
+.green .bg.right{ background:url(../images/bg_green.png) no-repeat right top; }
+.blue .bg.right{ background:url(../images/bg_blue.png) no-repeat right top; }
 
 .clock .backLeft{
-    background:url(img/background.png) no-repeat left top;    
+    background:url(../images/background.png) no-repeat left top;    
     z-index: 10;
 }
 
@@ -77,7 +82,7 @@
 }
 
 .clock .backRight{
-    background:url(img/background.png) no-repeat right top;    
+    background:url(../images/background.png) no-repeat right top;    
     left: 75px;
     top: 0;
 }
