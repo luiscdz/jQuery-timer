@@ -1,277 +1,254 @@
-/*jslint debug: true, nomen: true, plusplus: true, regexp: true, sloppy: true, vars: true, white: true*/
+;(function ( $, window, document, undefined ) {
 
-/*
-
- *
- * Licensed under MIT
- * http://www.opensource.org/licenses/mit-license.php
- *
- * Launch  : april 2015
- * Version : 0.1
- * Released: Tuesday 7th April, 2015 - 15:00
- */
-
-(function($){
-	
-	// A global array used by the functions of the plug-in:
-	var gVars = {};
-
-	// Extending the jQuery core:
-	$.fn.timer = function(opts){
-	
-		// "this" contains the elements that were selected when calling the plugin: $('elements').timer();
-		// If the selector returned more than one element, use the first one:
+	"use strict";
 		
-		var container = this.eq(0);
-	
-		if(!container)
-		{
-			try{
-				console.log( "Invalid selector!" );
-			} catch(e){}
-			
-			return false;
-		}
-		
-		if( !opts ){
-            opts = {}; 
-        }
-		
-		var defaults = {
-			/* Additional options will be added in future versions of the plugin. */
+		var pluginName = "timer",
+            defaults = {
+				duration : 60,
+                start : 60,
+                append : true,
+                direction: "backward",
+                debug: true,
+                autoRun : true,
+                onFinish :function(){},
+                onStart : function(){},
+                onStop : function(){}
 		};
-		
-		/* Merging the provided options with the default ones (will be used in future versions of the plugin): */
-		$.each(defaults,function(k,v){
-			opts[k] = opts[k] || defaults[k];
+
+		// The actual plugin constructor
+		function Plugin ( element, options ) {
+				this.element = element;
+				// jQuery has an extend method which merges the contents of two or
+				// more objects, storing the result in the first object. The first object
+				// is generally empty as we don't want to alter the default options for
+				// future instances of the plugin
+				this.settings = $.extend( {}, defaults, options );
+				this._defaults = defaults;
+				this._name = pluginName;
+				this.init();
+		}		
+        
+        // privates method
+        var _ = {
+            cache :{
+                current : 0            
+            },  
+            debug : function(obj) {
+                if (window.console && window.console.log){            
+                    window.console.log(obj);              
+                }
+            },
+            itemsImage: {},
+            intervalTimer: "",
+            contentTimer:"",
+            status: false,
+            render: function( settings, element ){
+               
+                var display;
+                var backLeft;
+                var backRight;
+                var rotateLetf;
+                var rotateRight;
+                var html;
+                var tempDiv;
+                                
+                display = "<div class='display'></div>";
+                backLeft = "<div class='bg backLeft'></div>";  
+                backRight = "<div class='bg backRight'></div>";   
+                rotateLetf = "<div class='rotate left'><div class='bg left'></div></div>";
+                rotateRight = "<div class='rotate right'><div class='bg right'></div></div>";                    
+
+                html = display +  backLeft + rotateLetf +  backRight + rotateRight;
+
+                // Creating a new element and setting the color as a class name:
+                tempDiv = $( "<div>" ).attr( "class", "blue clock" ).html( html );
+                this.contentTimer = $( tempDiv );
+                
+                // Appending to the container:
+                if( settings.append === true ){                 
+                    $( element ).append( tempDiv );
+                }else if( settings.append === false ){
+                    $( element ).html( tempDiv );
+                }
+                
+                this.cache.current = settings.start;               
+                
+                // Assigning some of the elements as variables for speed
+                // Adding the dial as a global variable. Will be available as itemsImage
+                this.itemsImage.rotateLeft = tempDiv.find( ".rotate.left" );
+                this.itemsImage.rotateRight = tempDiv.find( ".rotate.right" );
+                this.itemsImage.display = tempDiv.find( ".display" );   
+                
+                this.itemsImage.display.html( settings.start );
+            },
+            animationBackward: function( clock, current, total ){ 
+                                
+                // Calculating the current angle:
+                var angle = total === current ? 360: ( 360  / total ) * ( current );
+                angle < current - 1 ? 0 : angle;
+
+                var element;
+
+                if( current == 0 ){
+                    // Hiding the right half of the background:
+                    clock.rotateLeft.hide();
+
+                    // Resetting the rotation of the left part:
+                    this.rotateElement( clock.rotateLeft, 0 );
+                }
+
+                if( angle <= 180){
+                    // The left part is rotated, and the right is currently hidden:
+                    element = clock.rotateLeft;
+                    clock.rotateRight.hide();
+                }
+                else{
+                    // The first part of the rotation has completed, so we start rotating the right part:
+                    clock.rotateRight.show();
+                    clock.rotateLeft.show();
+
+                    this.rotateElement( clock.rotateLeft, 180 );
+
+                    element = clock.rotateRight;
+                    angle = angle - 180;
+                }
+
+                this.rotateElement( element, angle );
+
+                // Setting the text inside of the display element, inserting a leading zero if needed:
+                clock.display.html( current < 10 ? '0' + current : current );
+                
+                //subtracted one at start value
+                this.cache.current = this.cache.current - 1;
+            },
+            rotateElement : function( element, angle ){
+
+                // Rotating the element, depending on the browser:
+                var rotate = "rotate("+angle+"deg)";
+
+                if( element.css( "MozTransform" ) != undefined ){//Firefox
+                    element.css( "MozTransform", rotate );
+
+                }else if( element.css( "WebkitTransform" ) != undefined ){//Chrome, Safari, Opera 15+
+                    element.css( "WebkitTransform", rotate );
+
+                // A version for internet explorer using filters, works but is a bit buggy (no surprise here):
+                }else if( element.css( "transform" ) != undefined ){//IE9+
+                    element.css( "transform", rotate );
+
+                }else if( element.css( "-ms-filter" ) != undefined ) { //IE8
+                    var cos = Math.cos(Math.PI * 2 / 360 * angle);
+                    var sin = Math.sin(Math.PI * 2 / 360 * angle);
+
+                    element.css( "-ms-filter", "progid:DXImageTransform.Microsoft.Matrix(M11=" + cos 
+                                + ",M12=-" + sin + ",M21=" + sin + ",M22=" + cos 
+                                + ",SizingMethod='auto expand',FilterType='nearest neighbor')" );
+
+                    element.css( "left",-Math.floor( ( element.width() - 150 ) / 2 ) );
+                    element.css( "top",-Math.floor( ( element.height() - 150 ) / 2 ) );		          
+
+                }else if( element.css( "filter" ) != undefined ){ //IE6 and IE7
+
+                    var cos = Math.cos(Math.PI * 2 / 360 * angle);
+                    var sin = Math.sin(Math.PI * 2 / 360 * angle);
+
+                    element.css( "filter", "progid:DXImageTransform.Microsoft.Matrix(M11=" + cos 
+                                + ",M12=-" + sin + ",M21=" + sin + ",M22=" + cos 
+                                + ",SizingMethod='auto expand',FilterType='nearest neighbor')" );
+
+                    element.css( "left", - Math.floor( ( element.width() - 150 ) / 2 ) );
+                    element.css( "top", - Math.floor( ( element.height() - 150 ) / 2 ) );
+                }
+	
+	        },
+            callbacks :{
+                finish :  function ( settings, element ) {                         
+                         return  settings.onFinish.call( element );  
+                },
+                start :  function ( settings, element, current ) {                         
+                         return  settings.onStart.call( element, current, settings.duration, settings.direction  );  
+                },
+                stop :  function ( settings, element, current ) {                         
+                         return  settings.onStop.call( element, current, settings.duration, settings.direction  );  
+                }
+            }
+
+        }
+        
+        // Avoid Plugin.prototype conflicts
+		$.extend( Plugin.prototype, {
+				init : function () {
+						// Place initialization logic here
+						// You already have access to the DOM element and
+						// the options via the instance, e.g. this.element
+						// and this.settings
+						// you can add more functions like the one below and
+						// call them like so: this.yourOtherFunction(this.element, this.settings).
+						_.render( this.settings, this.element );
+                        if( this.settings.autoRun === true ){
+                            this.start();
+                        }
+				},
+				start : function () {
+                     
+                    // Setting up a interval, executed every 1000 milliseconds:
+                   if( !_.status ){
+                                           
+                       //determines if one starts from the right or left
+                       var validate = function(){
+
+                            if(  _.cache.current <= this.settings.duration - 1 &&  this.settings.direction === "forward" ){   
+
+                               // animationForward( _.itemsImage, _.cache.current, settings.duration );      
+
+                            }else  if(   _.cache.current >= 0 &&  this.settings.direction === "backward" ){
+                                _.animationBackward( _.itemsImage, _.cache.current, this.settings.duration )
+
+                            }else{
+                               //stop timer
+                               this.stop();
+                                _.callbacks.finish( this.settings, this.element );                                
+                            }
+
+                        }
+                       
+                        var intevalTimer = setInterval( validate.bind(this), 1000 );
+
+                        _.intervalTimer = intevalTimer;
+                        _.status = true;
+                        _.callbacks.start( this.settings, this.element, _.cache.current );   
+                   }                   
+                  
+				},
+                stop : function(){
+                    if(  _.status ){
+                        clearInterval( _.intervalTimer );
+                        _.status = false;
+                         _.callbacks.stop( this.settings, this.element, _.cache.current ); 
+                    }                    
+                },
+                destroy : function(){
+                    $( this.element ).removeData( this._name );
+                    _.contentTimer.remove();
+                },
+               /*restart : function(){
+                    _.cache.current = this.settings.start;                 
+                    
+                },*/
+                isRunning : function(){
+                     return _.status;
+                },
+                currentValue : _.cache.current
 		});
 
-		// Calling the setUp function and passing the container,
-		// will be available to the setUp function as "this":
-		setUp.call(container);
-		
-		return this;
-	}
-    
-    var seg = 1;
-    seg = 60;
-    var direction = "forward";
-        direction = "backward";
-    
-	function setUp(){
-		// The colors of the dials:
-		var colors = ['blue'];
-		
-		var tmp = "";
-        var display = "<div class='display'></div>";
-        var backLeft = "<div class='bg backLeft'></div>";  
-        var backRight = "<div class='bg backRight'></div>";          
-        //var frontLeft = "<div class='front left'></div>";        
-        var rotateLetf = "<div class='rotate left'><div class='bg left'></div></div>";
-        //var frontRight = "<div class='front right'></div>";
-        var rotateRight = "<div class='rotate right'><div class='bg right'></div></div>";
-        var front = "";
-        
-       
-        
-        front =  backLeft + rotateLetf +  backRight + rotateRight ;       
-        
-        var html = display + front;
-            
-		for( var i = 0 ; i < 1; i++ ){
-			// Creating a new element and setting the color as a class name:
-			
-			tmp = $('<div>').attr('class',colors[i]+' clock').html( html );
-            			
-			// Appending to the container:
-			$(this).append(tmp);
-			
-			// Assigning some of the elements as variables for speed:
-			tmp.rotateLeft = tmp.find('.rotate.left');
-			tmp.rotateRight = tmp.find('.rotate.right');
-			tmp.display = tmp.find('.display');
-			
-			// Adding the dial as a global variable. Will be available as gVars.colorName
-			gVars[colors[i]] = tmp;
-		}		
-       
-		// Setting up a interval, executed every 1000 milliseconds:
-		var animateCounter = setInterval(function(){
-		
-			var currentTime = new Date();
-			var h = currentTime.getHours();
-			var m = currentTime.getMinutes();
-			var s = currentTime.getSeconds();
+		// A really lightweight plugin wrapper around the constructor,
+		// preventing against multiple instantiations
+		$.fn[ pluginName ] = function ( options ) {
+				return this.each(function() {
+						if ( !$.data( this,   pluginName ) ) {
+								$.data( this, pluginName, new Plugin( this, options ) );
+						}
+				});
+		};
 
-            if(  seg <= 60 - 1 &&  direction === "forward" ){            
-			    animationForward( gVars.blue, seg, 60 );      
-                 clearInterval( animateCounter );
-                //animationBackward(gVars.green, seg, 60);
-			    //animation(gVars.blue, m, 60);
-			    //animation(gVars.orange, h, 24);
-            }else  if(  seg >= 0 &&  direction === "backward" ){
-                animationBackward( gVars.blue, seg, 60 );
-              //  clearInterval( animateCounter );
-            }else{
-                clearInterval( animateCounter );
-                
-            }
-		
-		},1000);
-	}
- 
-    
-	function animationBackward(clock, current, total)
-	{ 
-        seg--;
-              
-		// Calculating the current angle:
-		var angle = total === current ? 360: ( 360  / total ) * ( current );
-	    angle < current - 1 ? 0 : angle;
-        
-		var element;
-
-		if( current == 0 ){
-			// Hiding the right half of the background:
-			clock.rotateLeft.hide();
-			
-			// Resetting the rotation of the left part:
-			rotateElement( clock.rotateLeft, 0 );
-		}
-		
-		if( angle <= 180){
-			// The left part is rotated, and the right is currently hidden:
-			element = clock.rotateLeft;
-            clock.rotateRight.hide();
-		}
-		else{
-			// The first part of the rotation has completed, so we start rotating the right part:
-			clock.rotateRight.show();
-			clock.rotateLeft.show();
-			
-			rotateElement( clock.rotateLeft, 180 );
-			
-			element = clock.rotateRight;
-			angle = angle-180;
-		}
-
-		rotateElement(element,angle);
-		
-		// Setting the text inside of the display element, inserting a leading zero if needed:
-		clock.display.html( current < 10 ? '0' + current : current );
-	}
-	
-       
-      
-	function animationForward( clock, current, total ){ 
-        seg++;
-       
-		// Calculating the current angle:
-		var angle = ( 360 / total ) * ( current + 1 );
-	 
-		var element;
-
-		if( current == 0 ){
-			// Hiding the right half of the background:
-			clock.rotateRight.hide();
-			
-			// Resetting the rotation of the left part:
-			rotateElement( clock.rotateLeft, 0 );
-		}
-		
-		if( angle <= 180){
-			// The left part is rotated, and the right is currently hidden:
-			element = clock.rotateLeft;
-		}
-		else{
-			// The first part of the rotation has completed, so we start rotating the right part:
-			clock.rotateRight.show();
-			clock.rotateLeft.show();
-			
-			rotateElement( clock.rotateLeft, 180 );
-			
-			element = clock.rotateRight;
-			angle = angle-180;
-		}
-
-		rotateElement(element,angle);
-		
-		// Setting the text inside of the display element, inserting a leading zero if needed:
-		clock.display.html( current < 10 ? '0' + current : current );
-	}
-	
-	function rotateElement( element, angle ){
-        
-		// Rotating the element, depending on the browser:
-		var rotate = 'rotate('+angle+'deg)';
-		
-		if( element.css( 'MozTransform' ) != undefined ){
-			element.css( 'MozTransform', rotate );
-			
-        }else if( element.css( 'WebkitTransform' ) != undefined ){
-			element.css( 'WebkitTransform', rotate );
-	
-		// A version for internet explorer using filters, works but is a bit buggy (no surprise here):
-        }else if( element.css( "transform" ) != undefined ){//IE9+
-            element.css( "transform", rotate );
-            
-        }else if( element.css( "-ms-filter" ) != undefined ) { //IE8
-            var cos = Math.cos(Math.PI * 2 / 360 * angle);
-			var sin = Math.sin(Math.PI * 2 / 360 * angle);
-		
-            element.css( "-ms-filter", "progid:DXImageTransform.Microsoft.Matrix(M11="+cos+",M12=-"+sin+",M21="+sin+",M22="+cos+",SizingMethod='auto expand',FilterType='nearest neighbor')" );
-            
-			element.css( "left",-Math.floor( ( element.width() - 150 ) / 2 ) );
-			element.css( "top",-Math.floor( ( element.height() - 150 ) / 2 ) );		          
-            
-        }else if( element.css( "filter" ) != undefined ){ //IE6 and IE7
-		
-			var cos = Math.cos(Math.PI * 2 / 360 * angle);
-			var sin = Math.sin(Math.PI * 2 / 360 * angle);
-			
-			element.css( "filter", "progid:DXImageTransform.Microsoft.Matrix(M11="+cos+",M12=-"+sin+",M21="+sin+",M22="+cos+",SizingMethod='auto expand',FilterType='nearest neighbor')" );
-	        
-			element.css( "left", - Math.floor( ( element.width() - 150 ) / 2 ) );
-			element.css( "top", - Math.floor( ( element.height() - 150 ) / 2 ) );
-		}
-	
-	}
-    
-	function rotateElement2( element, angle )
-	{
-		// Rotating the element, depending on the browser:
-		var rotate = 'rotate('+angle+'deg)';
-		
-		if( element.css( 'MozTransform' ) != undefined ){
-			element.css( 'MozTransform', rotate );
-			
-        }else if( element.css( 'WebkitTransform' ) != undefined ){
-			element.css( 'WebkitTransform', rotate );
-	
-		// A version for internet explorer using filters, works but is a bit buggy (no surprise here):
-        }else if( element.css( "transform" ) != undefined ){//IE9+
-            element.css( "transform", rotate );
-            
-        }else if( element.css( "-ms-filter" ) != undefined ) { //IE8
-            var cos = Math.cos(Math.PI * 2 / 360 * angle);
-			var sin = Math.sin(Math.PI * 2 / 360 * angle);
-		
-            element.css( "-ms-filter", "progid:DXImageTransform.Microsoft.Matrix(M11="+cos+",M12=-"+sin+",M21="+sin+",M22="+cos+",SizingMethod='auto expand',FilterType='nearest neighbor')" );
-            
-			element.css( "left",-Math.floor( ( element.width() - 150 ) / 2 ) );
-			element.css( "top",-Math.floor( ( element.height() - 150 ) / 2 ) );		          
-            
-        }else if( element.css( "filter" ) != undefined ){ //IE6 and IE7
-		
-			var cos = Math.cos(Math.PI * 2 / 360 * angle);
-			var sin = Math.sin(Math.PI * 2 / 360 * angle);
-			
-			element.css( "filter", "progid:DXImageTransform.Microsoft.Matrix(M11="+cos+",M12=-"+sin+",M21="+sin+",M22="+cos+",SizingMethod='auto expand',FilterType='nearest neighbor')" );
-	        
-			element.css( "left", - Math.floor( ( element.width() - 150 ) / 2 ) );
-			element.css( "top", - Math.floor( ( element.height() - 150 ) / 2 ) );
-		}
-	
-	}
-	
-})(jQuery)
+})( jQuery, window, document );
