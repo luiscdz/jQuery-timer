@@ -171,8 +171,35 @@
                 stop :  function ( settings, element, current ) {                         
                          return  settings.onStop.call( element, current, settings.duration, settings.direction  );  
                 }
-            }
+            },
+            polyfill:{
+                bind : function(){
+                    if (!Function.prototype.bind) {
+                        Function.prototype.bind = function(oThis) {
+                            if (typeof this !== 'function') {
+                                // closest thing possible to the ECMAScript 5
+                                // internal IsCallable function
+                                throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable');
+                            }
 
+                            var aArgs   = Array.prototype.slice.call(arguments, 1),
+                                fToBind = this,
+                                fNOP    = function() {},
+                                fBound  = function() {
+                                return fToBind.apply(this instanceof fNOP
+                                     ? this
+                                     : oThis,
+                                     aArgs.concat(Array.prototype.slice.call(arguments)));
+                                };
+
+                            fNOP.prototype = this.prototype;
+                            fBound.prototype = new fNOP();
+
+                            return fBound;
+                        };
+                   }
+                }
+            }
         }
         
         // Avoid Plugin.prototype conflicts
@@ -184,6 +211,7 @@
 						// and this.settings
 						// you can add more functions like the one below and
 						// call them like so: this.yourOtherFunction(this.element, this.settings).
+                        _.polyfill.bind();
 						_.render( this.settings, this.element );
                         if( this.settings.autoRun === true ){
                             this.start();
