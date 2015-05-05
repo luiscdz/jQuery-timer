@@ -256,8 +256,9 @@
                     }                    
                 },
                 destroy : function(){
+                    this.stop();
                     $( this.element ).removeData( this._name );
-                    _.contentTimer.remove();
+                    $( this.element ).html( "" );
                 },
                /*restart : function(){
                     _.cache.current = this.settings.start;                 
